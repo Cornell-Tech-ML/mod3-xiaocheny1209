@@ -95,9 +95,11 @@ class Tensor:
         self.f = backend
 
     def requires_grad_(self, x: bool) -> None:
+        """Get history"""
         self.history = History()
 
     def requires_grad(self) -> bool:
+        """Get history"""
         return self.history is not None
 
     def to_numpy(self) -> npt.NDArray[np.float64]:
@@ -109,6 +111,10 @@ class Tensor:
 
     def _ensure_tensor(self, b: TensorLike) -> Tensor:
         """Turns a python number into a tensor with the same backend."""
+        if b is None:
+            # return self
+            c = Tensor.make([0], (1,), backend=self.backend)
+            return c
         if isinstance(b, (int, float)):
             c = Tensor.make([b], (1,), backend=self.backend)
         else:
@@ -194,6 +200,8 @@ class Tensor:
         # END CODE CHANGE (2021)
 
     def zeros(self, shape: Optional[UserShape] = None) -> Tensor:
+        """Create a tensor of zeros"""
+
         def zero(shape: UserShape) -> Tensor:
             return Tensor.make(
                 [0.0] * int(operators.prod(shape)), shape, backend=self.backend
@@ -239,14 +247,17 @@ class Tensor:
         return self.history is not None and self.history.last_fn is None
 
     def is_constant(self) -> bool:
+        """Check if the value is constant"""
         return self.history is None
 
     @property
     def parents(self) -> Iterable[Variable]:
+        """Return the parents"""
         assert self.history is not None
         return self.history.inputs
 
     def chain_rule(self, d_output: Any) -> Iterable[Tuple[Variable, Any]]:
+        """Find the derivative of a composite function by multiplying the derivative of the outer function by the derivative of the inner function."""
         h = self.history
         assert h is not None
         assert h.last_fn is not None
@@ -260,6 +271,7 @@ class Tensor:
         ]
 
     def backward(self, grad_output: Optional[Tensor] = None) -> None:
+        """Calls autodiff to fill in the derivatives for the history of this object."""
         if grad_output is None:
             assert self.shape == (1,), "Must provide grad_output if non-scalar"
             grad_output = Tensor.make([1.0], (1,), backend=self.backend)
@@ -284,4 +296,103 @@ class Tensor:
         return self._tensor.shape
 
     # Functions
-    raise NotImplementedError("Need to include this file from past assignment.")
+    # TODO: Implement for Task 2.3.
+    def __add__(self, b: TensorLike) -> Tensor:
+        """Add two tensors or a tensor and a scalar."""
+        return Add.apply(self, self._ensure_tensor(b))
+
+    def __sub__(self, b: TensorLike) -> Tensor:
+        """Substract two tensors"""
+        return Add.apply(self, -self._ensure_tensor(b))
+
+    def __mul__(self, b: TensorLike) -> Tensor:
+        """Multiply two tensors or a tensor and a scalar."""
+        return Mul.apply(self, self._ensure_tensor(b))
+
+    def __neg__(self) -> Tensor:
+        """Negate the tensor (element-wise)."""
+        return Neg.apply(self)
+
+    def __radd__(self, b: TensorLike) -> Tensor:
+        """Add a scalar to a tensor (reversed operands)."""
+        return self + b
+
+    def __rmul__(self, b: TensorLike) -> Tensor:
+        """Multiply a scalar by a tensor (reversed operands)."""
+        return self * b
+
+    def all(self, dim: Optional[int] = None) -> Tensor:
+        """Check if all elements along a dimension are True."""
+        if dim is None:
+            return All.apply(self.view(self.size), self._ensure_tensor(0))
+        else:
+            return All.apply(self, self._ensure_tensor(dim))
+
+    def is_close(self, b: Tensor) -> Tensor:
+        """Element-wise check if values are close between tensors."""
+        return IsClose.apply(self, b)
+
+    def __lt__(self, b: TensorLike) -> Tensor:
+        """Less than comparison."""
+        return LT.apply(self, self._ensure_tensor(b))
+
+    def __eq__(self, b: TensorLike) -> Tensor:
+        """Equal to comparison."""
+        return EQ.apply(self, self._ensure_tensor(b))
+
+    def __gt__(self, b: TensorLike) -> Tensor:
+        """Greater than comparison (reverse of LT)."""
+        if b is not None:
+            return LT.apply(self._ensure_tensor(b), self)
+
+    def sigmoid(self) -> Tensor:
+        """Apply sigmoid function element-wise."""
+        return Sigmoid.apply(self)
+
+    def relu(self) -> Tensor:
+        """Apply ReLU function element-wise."""
+        return ReLU.apply(self)
+
+    def log(self) -> Tensor:
+        """Apply log function element-wise."""
+        return Log.apply(self)
+
+    def exp(self) -> Tensor:
+        """Apply exp function element-wise."""
+        return Exp.apply(self)
+
+    def sum(self, dim: Optional[int] = None) -> Tensor:
+        """Sum of tensor elements along a given dimension, or over the entire tensor."""
+        if dim is None:
+            return Sum.apply(self.contiguous().view(self.size), self._ensure_tensor(0))
+        else:
+            return Sum.apply(self, self._ensure_tensor(dim))
+
+    def mean(self, dim: Optional[int] = None) -> Tensor:
+        """Mean of tensor elements along a given dimension."""
+        if dim is None:
+            return self.sum() / self.size
+        else:
+            return self.sum(dim) / self.shape[dim]
+
+    def permute(self, *dims: int) -> Tensor:
+        """Permute the dimensions of the tensor according to `dims`."""
+        return Permute.apply(self, tensor(list(dims)))
+
+    def view(self, *shape: int) -> Tensor:
+        """Reshape the tensor into the specified shape."""
+        return View.apply(self, tensor(list(shape)))
+
+    def zero_grad_(self) -> None:
+        """Sets the gradients of the tensor to zero."""
+        self.grad = None
+
+    @property
+    def size(self) -> int:
+        """Return the total number of elements in the tensor."""
+        return self._tensor.size
+
+    @property
+    def dims(self) -> int:
+        """Return the number of dimensions of the tensor."""
+        return self._tensor.dims
