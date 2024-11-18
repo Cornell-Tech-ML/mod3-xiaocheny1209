@@ -6,8 +6,40 @@
 
 * Overview: https://minitorch.github.io/module3.html
 
-Training Results:
-GPU Split 13m36s -> 1.632s per epoch
+## Task 3.1, 3.2 parallel analytics scripts
+
+## Task 3.5 training logs
+
+### GPU simple 6m45s/250 epochs -> 1.62s per epoch
+
+### GPU xor 6m45s/250 epochs -> 1.62s per epoch
+Epoch  0  loss  6.613845773914195 correct 35
+Epoch  10  loss  4.929246212939549 correct 38
+Epoch  20  loss  3.244614394280823 correct 41
+Epoch  30  loss  3.4185786996348755 correct 47
+Epoch  40  loss  1.308267461278373 correct 41
+Epoch  50  loss  2.0170419777759 correct 45
+Epoch  60  loss  3.8662104730880547 correct 47
+Epoch  70  loss  1.6422476081174655 correct 48
+Epoch  80  loss  1.7870460801372534 correct 48
+Epoch  90  loss  1.4704598974490823 correct 48
+Epoch  100  loss  1.363390468471486 correct 48
+Epoch  110  loss  0.6934944748325108 correct 48
+Epoch  120  loss  0.7417159084922713 correct 48
+Epoch  130  loss  1.835653638306702 correct 48
+Epoch  140  loss  4.000598769027761 correct 49
+Epoch  150  loss  1.3499429753000727 correct 48
+Epoch  160  loss  1.4383209185741497 correct 48
+Epoch  170  loss  1.5347546102661485 correct 48
+Epoch  180  loss  1.0794497486330654 correct 48
+Epoch  190  loss  1.2437754128037484 correct 48
+Epoch  200  loss  1.2149848298903625 correct 48
+Epoch  210  loss  0.2968091532583476 correct 48
+Epoch  220  loss  2.1193951091947105 correct 48
+Epoch  230  loss  0.7776381964597234 correct 48
+Epoch  240  loss  1.629146564405564 correct 48
+
+### GPU Split 13m36s/500 epochs -> 1.632s per epoch
 Epoch  0  loss  7.085095862969477 correct 33
 Epoch  10  loss  5.135104696648748 correct 33
 Epoch  20  loss  6.518139810770241 correct 42
