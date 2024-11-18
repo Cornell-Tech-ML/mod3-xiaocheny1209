@@ -387,6 +387,25 @@ Allocation hoisting:
 No allocation hoisting found
 None
 
+## Task 3.4 CUDA matmul vs. Fast matmul (with CPU Parallelization)
+
+Timing summary
+Size: 64
+    fast: 0.00361
+    gpu: 0.00674
+Size: 128
+    fast: 0.01606
+    gpu: 0.01443
+Size: 256
+    fast: 0.09912
+    gpu: 0.05237
+Size: 512
+    fast: 1.29444
+    gpu: 0.27067
+Size: 1024
+    fast: 7.75254
+    gpu: 1.03165
+
 ## Task 3.5 training logs
 
 ### CPU simple 53s/250 epochs
