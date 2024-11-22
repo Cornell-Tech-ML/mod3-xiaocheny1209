@@ -34,7 +34,7 @@ def device_jit(fn: Fn, **kwargs) -> Fn:  # noqa: ANN003
     return _jit(device=True, **kwargs)(fn)  # type: ignore
 
 
-def jit(fn, **kwargs) -> FakeCUDAKernel:  # noqa: ANN003
+def jit(fn: Fn, **kwargs) -> FakeCUDAKernel:  # noqa: ANN003
     """JIT compile a function as a CUDA kernel for GPU execution."""
     return _jit(**kwargs)(fn)  # type: ignore
 

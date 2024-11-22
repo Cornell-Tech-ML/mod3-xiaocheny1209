@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from typing import Callable, Optional
 
     from .tensor import Tensor
-    from .tensor_data import Index, Shape, Storage, Strides
+    from .tensor_data import Shape, Storage, Strides
 
 # TIP: Use `NUMBA_DISABLE_JIT=1 pytest tests/ -m task3_1` to run these tests without JIT.
 
@@ -30,6 +30,7 @@ Fn = TypeVar("Fn")
 
 
 def njit(fn: Fn, **kwargs: Any) -> Fn:
+    """Parallelize a function to using jit"""
     return _njit(inline="always", **kwargs)(fn)  # type: ignore
 
 
@@ -340,22 +341,43 @@ def _tensor_matrix_multiply(
         None : Fills in `out`
 
     """
-    assert a_shape[-1] == b_shape[-2], "Incompatible matrix shapes for multiplication"
+    a_cols = a_shape[-1]
+    b_rows = b_shape[-2]
+    print("a strides", a_strides, "b strides", b_strides)
+    print("a shape", a_shape, "b shape", b_shape)
+    print("a storage", a_storage, "b storage", b_storage)
+
+    assert a_cols == b_rows, "Incompatible matrix shapes for multiplication"
 
     a_batch_stride = a_strides[0] if a_shape[0] > 1 else 0
     b_batch_stride = b_strides[0] if b_shape[0] > 1 else 0
 
-    N, I, J, K = out_shape[0], out_shape[1], out_shape[2], a_shape[-1]
-    for n in prange(N):
-        for i in prange(I):
-            for j in prange(J):
-                for k in prange(K):
-                    out_ordinal = (
-                        n * out_strides[0] + i * out_strides[1] + j * out_strides[2]
-                    )
-                    a_ordinal = n * a_batch_stride + i * a_strides[1] + k * a_strides[2]
-                    b_ordinal = n * b_batch_stride + k * b_strides[1] + j * b_strides[2]
-                    out[out_ordinal] += a_storage[a_ordinal] * b_storage[b_ordinal]
+    out_depth, out_rows, out_cols = out_shape[0], out_shape[1], out_shape[2]
+    for n in prange(out_depth):
+        for i in prange(out_rows):
+            for j in range(out_cols):
+                temp_sum = 0.0
+                for k in range(a_cols):
+                    a_index = n * a_batch_stride + i * a_strides[1] + k * a_strides[2]
+                    b_index = n * b_batch_stride + k * b_strides[1] + j * b_strides[2]
+                    temp_sum += a_storage[a_index] * b_storage[b_index]
+
+                out_index = n * out_strides[0] + i * out_strides[1] + j * out_strides[2]
+                out[out_index] = temp_sum
+
+    # print("out shape", out_shape, "out stride", out_strides, "out storage", out)
+
+    # N, I, J, K = out_shape[0], out_shape[1], out_shape[2], a_shape[-1]
+    # for n in prange(N):
+    #     for i in prange(I):
+    #         for j in prange(J):
+    #             for k in prange(K):
+    #                 out_ordinal = (
+    #                     n * out_strides[0] + i * out_strides[1] + j * out_strides[2]
+    #                 )
+    #                 a_ordinal = n * a_batch_stride + i * a_strides[1] + k * a_strides[2]
+    #                 b_ordinal = n * b_batch_stride + k * b_strides[1] + j * b_strides[2]
+    #                 out[out_ordinal] += a_storage[a_ordinal] * b_storage[b_ordinal]
 
 
 tensor_matrix_multiply = njit(_tensor_matrix_multiply, parallel=True)
