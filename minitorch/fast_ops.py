@@ -283,17 +283,13 @@ def tensor_reduce(
         # TODO: Implement for Task 3.1.
         reduce_size = a_shape[reduce_dim]
         for i in prange(len(out)):
-            out_index = np.zeros(MAX_DIMS, np.int32)  # len(outshape)
-            a_index = np.zeros(MAX_DIMS, np.int32)
+            out_index = np.zeros(MAX_DIMS, np.int32)
             to_index(i, out_shape, out_index)
             o = index_to_position(out_index, out_strides)
-            result = 0.0
-            a_index[: len(out_shape)] = out_index[: len(out_shape)]
             for s in range(reduce_size):
-                a_index[reduce_dim] = s  # Set the reduce dimension
-                j = index_to_position(a_index, a_strides)  # Compute position in `a`
-                result = fn(result, a_storage[j])
-            out[o] = result
+                out_index[reduce_dim] = s
+                j = index_to_position(out_index, a_strides)  # Compute position in `a`
+                out[o] = fn(out[o], a_storage[j])
 
     return njit(_reduce, parallel=True)  # type: ignore
 
@@ -343,9 +339,6 @@ def _tensor_matrix_multiply(
     """
     a_cols = a_shape[-1]
     b_rows = b_shape[-2]
-    print("a strides", a_strides, "b strides", b_strides)
-    print("a shape", a_shape, "b shape", b_shape)
-    print("a storage", a_storage, "b storage", b_storage)
 
     assert a_cols == b_rows, "Incompatible matrix shapes for multiplication"
 
@@ -364,20 +357,6 @@ def _tensor_matrix_multiply(
 
                 out_index = n * out_strides[0] + i * out_strides[1] + j * out_strides[2]
                 out[out_index] = temp_sum
-
-    # print("out shape", out_shape, "out stride", out_strides, "out storage", out)
-
-    # N, I, J, K = out_shape[0], out_shape[1], out_shape[2], a_shape[-1]
-    # for n in prange(N):
-    #     for i in prange(I):
-    #         for j in prange(J):
-    #             for k in prange(K):
-    #                 out_ordinal = (
-    #                     n * out_strides[0] + i * out_strides[1] + j * out_strides[2]
-    #                 )
-    #                 a_ordinal = n * a_batch_stride + i * a_strides[1] + k * a_strides[2]
-    #                 b_ordinal = n * b_batch_stride + k * b_strides[1] + j * b_strides[2]
-    #                 out[out_ordinal] += a_storage[a_ordinal] * b_storage[b_ordinal]
 
 
 tensor_matrix_multiply = njit(_tensor_matrix_multiply, parallel=True)
